@@ -8,10 +8,6 @@ const ManageOrders = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   const fetchOrders = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
@@ -25,6 +21,10 @@ const ManageOrders = () => {
     }
   };
 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
   const updateStatus = async (orderId, status) => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
@@ -36,13 +36,14 @@ const ManageOrders = () => {
     }
   };
 
-  const statusOptions = ['Pending', 'Processing', 'Out for Delivery', 'Delivered', 'Cancelled'];
+  const statusOptions = ['Pending', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'];
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'Pending': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-      case 'Processing': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-      case 'Out for Delivery': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
+      case 'Confirmed': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+      case 'Preparing': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
+      case 'Out for Delivery': return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
       case 'Delivered': return 'text-green-500 bg-green-500/10 border-green-500/20';
       case 'Cancelled': return 'text-red-500 bg-red-500/10 border-red-500/20';
       default: return 'text-slate-400 bg-slate-800/50 border-slate-700';
@@ -89,7 +90,7 @@ const ManageOrders = () => {
                         ))}
                       </div>
                       <div className="font-bold text-orange-500 mt-2 pt-2 border-t border-slate-800/50 w-full inline-block text-lg">
-                        ${order.totalPrice.toFixed(2)}
+                        ₹{order.totalPrice.toFixed(2)}
                       </div>
                     </td>
                     <td className="py-4 px-6 align-top">
