@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiClock, FiCheckCircle, FiTruck, FiXCircle, FiDownload, FiStar } from 'react-icons/fi';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { toast } from 'react-toastify';
 
 const Orders = () => {
@@ -71,25 +71,20 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Order Placed': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+      case 'Pending': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
       case 'Confirmed': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
       case 'Preparing': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
       case 'Out for Delivery': return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
       case 'Delivered': return 'text-green-500 bg-green-500/10 border-green-500/20';
       case 'Cancelled': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      default: return 'text-slate-400 bg-slate-800/50 border-slate-700'; // Mapped Pending to Order Placed
+      default: return 'text-slate-400 bg-slate-800/50 border-slate-700';
     }
   };
 
   const getStatusProgress = (status) => {
-    // Map old statuses to new for compatibility with existing DB records
-    let mappedStatus = status;
-    if (status === 'Pending') mappedStatus = 'Order Placed';
-    if (status === 'Processing') mappedStatus = 'Preparing';
-
-    const stages = ['Order Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
-    if (mappedStatus === 'Cancelled') return -1;
-    return Math.max(0, stages.indexOf(mappedStatus));
+    const stages = ['Pending', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
+    if (status === 'Cancelled') return -1;
+    return Math.max(0, stages.indexOf(status));
   };
 
   const statusIcons = [
@@ -130,13 +125,13 @@ const Orders = () => {
       const itemData = [
         item.title,
         item.quantity,
-        `$${item.price.toFixed(2)}`,
-        `$${(item.price * item.quantity).toFixed(2)}`
+        `₹${item.price.toFixed(2)}`,
+        `₹${(item.price * item.quantity).toFixed(2)}`
       ];
       tableRows.push(itemData);
     });
     
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 72,
@@ -148,13 +143,13 @@ const Orders = () => {
     // Total
     const finalY = doc.lastAutoTable.finalY || 72;
     doc.setFontSize(12);
-    doc.text(`Items Total: $${(order.totalPrice - (order.deliveryFee || 5) - (order.tax || 0)).toFixed(2)}`, 130, finalY + 10);
-    doc.text(`Delivery: $${(order.deliveryFee || 5).toFixed(2)}`, 130, finalY + 16);
-    doc.text(`Tax: $${(order.tax || (order.totalPrice * 0.1)).toFixed(2)}`, 130, finalY + 22);
+    doc.text(`Items Total: ₹${(order.totalPrice - (order.deliveryFee || 5) - (order.tax || 0)).toFixed(2)}`, 130, finalY + 10);
+    doc.text(`Delivery: ₹${(order.deliveryFee || 5).toFixed(2)}`, 130, finalY + 16);
+    doc.text(`Tax: ₹${(order.tax || (order.totalPrice * 0.1)).toFixed(2)}`, 130, finalY + 22);
     
     doc.setFontSize(14);
     doc.setTextColor(249, 115, 22);
-    doc.text(`Total Amount: $${order.totalPrice.toFixed(2)}`, 130, finalY + 32);
+    doc.text(`Total Amount: ₹${order.totalPrice.toFixed(2)}`, 130, finalY + 32);
     
     // Footer
     doc.setFontSize(10);
@@ -198,8 +193,6 @@ const Orders = () => {
           {orders.map((order, index) => {
             const currentStage = getStatusProgress(order.orderStatus);
             let displayStatus = order.orderStatus;
-            if (displayStatus === 'Pending') displayStatus = 'Order Placed';
-            if (displayStatus === 'Processing') displayStatus = 'Preparing';
             
             return (
               <motion.div 
@@ -258,7 +251,7 @@ const Orders = () => {
                       
                       {/* Stages */}
                       <div className="relative z-10 flex justify-between">
-                        {['Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((stage, i) => {
+                        {['Pending', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((stage, i) => {
                           const isCompleted = i <= currentStage;
                           const isCurrent = i === currentStage;
                           
@@ -305,7 +298,7 @@ const Orders = () => {
                             <h4 className="font-bold text-slate-200 text-base">{item.title}</h4>
                             <p className="text-slate-400">Qty: {item.quantity}</p>
                           </div>
-                          <span className="text-slate-200 font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="text-slate-200 font-bold">₹{(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -317,27 +310,27 @@ const Orders = () => {
                     <div className="space-y-3 text-sm mb-4">
                       <div className="flex justify-between text-slate-400">
                         <span>Items Total</span>
-                        <span className="text-slate-300">${(order.totalPrice - (order.deliveryFee || 5) - (order.tax || 0)).toFixed(2)}</span>
+                        <span className="text-slate-300">₹{(order.totalPrice - (order.deliveryFee || 5) - (order.tax || 0)).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-slate-400">
                         <span>Delivery</span>
-                        <span className="text-slate-300">${(order.deliveryFee || 5).toFixed(2)}</span>
+                        <span className="text-slate-300">₹{(order.deliveryFee || 5).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-slate-400">
                         <span>Tax</span>
-                        <span className="text-slate-300">${(order.tax || (order.totalPrice * 0.1)).toFixed(2)}</span>
+                        <span className="text-slate-300">₹{(order.tax || (order.totalPrice * 0.1)).toFixed(2)}</span>
                       </div>
                       {order.discount > 0 && (
                         <div className="flex justify-between text-green-500 font-medium bg-green-500/10 px-2 py-1 rounded">
                           <span>Discount Applied</span>
-                          <span>-${order.discount.toFixed(2)}</span>
+                          <span>-₹{order.discount.toFixed(2)}</span>
                         </div>
                       )}
                     </div>
                     
                     <div className="border-t border-slate-700 pt-3 flex justify-between items-center mb-4">
                       <span className="text-slate-200 font-bold">Total Paid</span>
-                      <span className="text-orange-500 font-black text-xl drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]">${order.totalPrice.toFixed(2)}</span>
+                      <span className="text-orange-500 font-black text-xl drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]">₹{order.totalPrice.toFixed(2)}</span>
                     </div>
 
                     <div className="bg-slate-950 p-3 rounded-xl flex items-center justify-between border border-slate-800">
