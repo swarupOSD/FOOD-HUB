@@ -5,11 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FiCreditCard, FiPackage, FiMapPin, FiTag, FiX, FiCheck, FiSmartphone, FiShield } from 'react-icons/fi';
-import { useJsApiLoader, GoogleMap, Marker } from '@react-google-maps/api';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '0.75rem' };
-const defaultCenter = { lat: 40.7128, lng: -74.0060 }; // Default: New York
 
 const Checkout = () => {
   const { cart, clearCart, subtotal, taxAmount, deliveryFee, discountAmount, finalTotal, applyCoupon, removeCoupon, couponCode: activeCoupon } = useContext(CartContext);
@@ -20,29 +16,13 @@ const Checkout = () => {
     address: user?.address || '',
     city: '',
     postalCode: '',
-    country: '',
-    lat: defaultCenter.lat,
-    lng: defaultCenter.lng
+    country: ''
   });
 
   const [paymentMethod, setPaymentMethod] = useState('PhonePe');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showUPIModal, setShowUPIModal] = useState(false);
   const [couponInput, setCouponInput] = useState('');
-  const [markerPosition, setMarkerPosition] = useState(defaultCenter);
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'placeholder'
-  });
-
-  const onMapClick = useCallback((e) => {
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-    setMarkerPosition({ lat, lng });
-    setShippingAddress(prev => ({ ...prev, lat, lng }));
-    toast.info('Location pinned! (Geocoding requires valid API key)');
-  }, []);
 
   const handleApplyCoupon = (e) => {
     e.preventDefault();
@@ -119,25 +99,6 @@ const Checkout = () => {
             <h2 className="text-xl font-bold border-b border-slate-800 pb-4 text-slate-50 flex items-center gap-2">
               <FiMapPin className="text-orange-500" /> Delivery Location
             </h2>
-            
-            <div className="w-full bg-slate-900/50 p-2 rounded-xl border border-slate-800">
-              {isLoaded ? (
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={defaultCenter}
-                  zoom={12}
-                  onClick={onMapClick}
-                  options={{ styles: [{ elementType: 'geometry', stylers: [{ color: '#242f3e' }] }, { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] }] }}
-                >
-                  <Marker position={markerPosition} animation={2} />
-                </GoogleMap>
-              ) : (
-                <div className="w-full h-[300px] flex items-center justify-center bg-slate-900 text-slate-400 rounded-xl animate-pulse">
-                  Loading Map...
-                </div>
-              )}
-              <p className="text-xs text-slate-400 mt-2 text-center">Click on the map to pin your exact delivery location.</p>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
               <div className="col-span-2">
@@ -240,7 +201,7 @@ const Checkout = () => {
               type="submit"
               className="w-full bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-bold flex items-center justify-center transition-all hover:scale-[1.02] shadow-lg shadow-orange-600/30 mt-6 text-lg"
             >
-              Proceed to Pay ${finalTotal.toFixed(2)}
+              Proceed to Pay ₹{finalTotal.toFixed(2)}
             </button>
           </form>
         </div>
@@ -256,7 +217,7 @@ const Checkout = () => {
                     <span className="font-medium text-orange-500">{item.quantity}x</span>
                     <span className="truncate max-w-[150px]">{item.title}</span>
                   </div>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
+                  <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -297,28 +258,28 @@ const Checkout = () => {
 
               <div className="flex justify-between border-t border-slate-800 pt-4">
                 <span className="text-slate-400">Subtotal</span>
-                <span className="text-slate-200">${subtotal.toFixed(2)}</span>
+                <span className="text-slate-200">₹{subtotal.toFixed(2)}</span>
               </div>
               
               {discountAmount > 0 && (
                 <div className="flex justify-between text-green-500">
                   <span>Discount</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-₹{discountAmount.toFixed(2)}</span>
                 </div>
               )}
               
               <div className="flex justify-between">
                 <span className="text-slate-400">Delivery</span>
-                <span className="text-slate-200">${deliveryFee.toFixed(2)}</span>
+                <span className="text-slate-200">₹{deliveryFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Tax</span>
-                <span className="text-slate-200">${taxAmount.toFixed(2)}</span>
+                <span className="text-slate-200">₹{taxAmount.toFixed(2)}</span>
               </div>
               <div className="border-t border-slate-800 mt-2 pt-4 flex justify-between items-center text-lg font-bold">
                 <span className="text-slate-50">Total</span>
                 <span className="text-orange-500 text-2xl">
-                  ${finalTotal.toFixed(2)}
+                  ₹{finalTotal.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -358,7 +319,7 @@ const Checkout = () => {
               
               <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
                 <div className="text-sm text-slate-400 mb-1">Amount to Pay</div>
-                <div className="text-3xl font-bold text-orange-500 mb-3">${finalTotal.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-orange-500 mb-3">₹{finalTotal.toFixed(2)}</div>
                 <div className="text-xs text-slate-500 uppercase tracking-wider">UPI ID</div>
                 <div className="text-sm font-medium text-slate-200 select-all bg-slate-900/50 py-1.5 px-3 rounded-lg inline-block mt-1 border border-slate-700 flex items-center justify-center gap-2 mx-auto">
                   <FiShield className="text-green-500" /> {upiId}
