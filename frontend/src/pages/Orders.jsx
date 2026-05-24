@@ -71,7 +71,8 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Pending': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+      case 'Pending':
+      case 'Order Placed': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
       case 'Confirmed': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
       case 'Preparing': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
       case 'Out for Delivery': return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
@@ -82,9 +83,10 @@ const Orders = () => {
   };
 
   const getStatusProgress = (status) => {
-    const stages = ['Pending', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
+    const stages = ['Order Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
     if (status === 'Cancelled') return -1;
-    return Math.max(0, stages.indexOf(status));
+    const effectiveStatus = status === 'Pending' ? 'Order Placed' : status;
+    return Math.max(0, stages.indexOf(effectiveStatus));
   };
 
   const statusIcons = [
@@ -192,7 +194,7 @@ const Orders = () => {
         <div className="space-y-8">
           {orders.map((order, index) => {
             const currentStage = getStatusProgress(order.orderStatus);
-            let displayStatus = order.orderStatus;
+            let displayStatus = order.orderStatus === 'Pending' ? 'Order Placed' : order.orderStatus;
             
             return (
               <motion.div 
@@ -251,7 +253,7 @@ const Orders = () => {
                       
                       {/* Stages */}
                       <div className="relative z-10 flex justify-between">
-                        {['Pending', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((stage, i) => {
+                        {['Order Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((stage, i) => {
                           const isCompleted = i <= currentStage;
                           const isCurrent = i === currentStage;
                           
