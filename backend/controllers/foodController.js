@@ -1,4 +1,5 @@
 import Food from '../models/Food.js';
+import Review from '../models/Review.js';
 
 // @desc    Get all foods
 // @route   GET /api/foods
@@ -112,4 +113,81 @@ const deleteFood = async (req, res) => {
   }
 };
 
-export { getFoods, getFoodById, createFood, updateFood, deleteFood };
+// @desc    Create a review for a food item
+// @route   POST /api/foods/:id/reviews
+// @access  Private
+const createFoodReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+
+    const food = await Food.findById(req.params.id);
+    if (!food) {
+      return res.status(404).json({ message: 'Food not found' });
+    }
+
+    // Check if the user already reviewed this food
+    const existingReview = await Review.findOne({
+      userId: req.user._id,
+      foodId: req.params.id,
+    });
+
+    if (existingReview) {
+      return res.status(400).json({ message: 'You have already reviewed this food' });
+    }
+
+    const review = new Review({
+      userId: req.user._id,
+      foodId: req.params.id,
+      name: req.user.name,
+      rating: Number(rating),
+      comment,
+    });
+
+    await review.save();
+
+    // Recalculate average rating and count
+    const allReviews = await Review.find({ foodId: req.params.id });
+    food.numReviews = allReviews.length;
+    food.rating = Number(
+      (allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1)
+    );
+    await food.save();
+
+    res.status(201).json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all reviews for a food item
+// @route   GET /api/foods/:id/reviews
+// @access  Public
+const getFoodReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ foodId: req.params.id }).sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Toggle helpful vote on a review
+// @route   PUT /api/foods/:id/reviews/:reviewId/helpful
+// @access  Private
+const toggleHelpful = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    review.helpful += 1;
+    await review.save();
+
+    res.json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getFoods, getFoodById, createFood, updateFood, deleteFood, createFoodReview, getFoodReviews, toggleHelpful };
