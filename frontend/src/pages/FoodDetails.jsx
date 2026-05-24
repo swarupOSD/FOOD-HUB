@@ -149,10 +149,10 @@ const FoodDetails = () => {
             <img 
               src={food.image} 
               alt={food.title} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
             />
             <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-4 py-2 rounded-xl text-lg font-bold text-orange-500 border border-slate-700/50 shadow-lg">
-              ${food.price.toFixed(2)}
+              ₹{food.price.toFixed(2)}
             </div>
           </div>
         </motion.div>
@@ -203,7 +203,7 @@ const FoodDetails = () => {
               className="flex-1 w-full flex items-center justify-center bg-orange-600 hover:bg-orange-500 text-white h-14 rounded-full font-bold text-lg shadow-lg shadow-orange-600/30 transition-colors"
             >
               <FiShoppingBag className="mr-2" />
-              Add to Cart - ${(food.price * quantity).toFixed(2)}
+              Add to Cart - ₹{(food.price * quantity).toFixed(2)}
             </motion.button>
           </div>
         </motion.div>
