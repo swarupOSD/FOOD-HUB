@@ -36,11 +36,12 @@ const ManageOrders = () => {
     }
   };
 
-  const statusOptions = ['Pending', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'];
+  const statusOptions = ['Order Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'];
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Pending': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+      case 'Pending':
+      case 'Order Placed': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
       case 'Confirmed': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
       case 'Preparing': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
       case 'Out for Delivery': return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
@@ -95,7 +96,7 @@ const ManageOrders = () => {
                     </td>
                     <td className="py-4 px-6 align-top">
                       <select 
-                        value={order.orderStatus}
+                        value={order.orderStatus === 'Pending' ? 'Order Placed' : order.orderStatus}
                         onChange={(e) => updateStatus(order._id, e.target.value)}
                         className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none text-sm font-semibold cursor-pointer ${getStatusColor(order.orderStatus)}`}
                       >
