@@ -71,14 +71,14 @@ const Cart = () => {
                     <img 
                       src={item.image} 
                       alt={item.title} 
-                      className="w-24 h-24 rounded-xl object-cover shadow-md"
+                      className="w-24 h-24 rounded-xl object-cover object-center shadow-md"
                     />
                     
                     <div className="flex-grow text-center sm:text-left">
                       <Link to={`/food/${item.foodId}`} className="text-xl font-bold text-slate-100 hover:text-orange-500 transition-colors">
                         {item.title}
                       </Link>
-                      <p className="text-slate-400 mt-1">${item.price.toFixed(2)} each</p>
+                      <p className="text-slate-400 mt-1">₹{item.price.toFixed(2)} each</p>
                     </div>
                     
                     <div className="flex items-center space-x-4">
@@ -87,7 +87,7 @@ const Cart = () => {
                       </div>
                       
                       <div className="text-xl font-bold text-orange-500 w-24 text-right">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price * item.quantity).toFixed(2)}
                       </div>
                       
                       <button 
@@ -131,29 +131,29 @@ const Cart = () => {
             <div className="space-y-4 mb-6 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-400">Subtotal</span>
-                <span className="text-slate-200">${subtotal.toFixed(2)}</span>
+                <span className="text-slate-200">₹{subtotal.toFixed(2)}</span>
               </div>
               
               {discountAmount > 0 && (
                 <div className="flex justify-between text-green-500">
                   <span>Discount ({couponCode})</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-₹{discountAmount.toFixed(2)}</span>
                 </div>
               )}
               
               <div className="flex justify-between">
                 <span className="text-slate-400">Delivery Fee</span>
-                <span className="text-slate-200">${deliveryFee.toFixed(2)}</span>
+                <span className="text-slate-200">₹{deliveryFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Estimated Tax (5%)</span>
-                <span className="text-slate-200">${taxAmount.toFixed(2)}</span>
+                <span className="text-slate-200">₹{taxAmount.toFixed(2)}</span>
               </div>
               
               <div className="border-t border-slate-700 pt-4 flex justify-between items-center text-lg font-bold">
                 <span className="text-slate-50">Total</span>
                 <span className="text-orange-500 text-2xl">
-                  ${finalTotal.toFixed(2)}
+                  ₹{finalTotal.toFixed(2)}
                 </span>
               </div>
             </div>
