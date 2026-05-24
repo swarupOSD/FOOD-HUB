@@ -66,16 +66,6 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            {/* Demo Toast Notification Button */}
-            <button 
-              onClick={() => {
-                toast.success('FoodHub notifications are working!', { icon: '🔔' });
-                toast.info('This is an info alert.', { icon: 'ℹ️' });
-              }}
-              className="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 transition-colors"
-            >
-              Test Alerts
-            </button>
 
             <Link to="/cart" className="relative p-2 text-slate-50 hover:text-orange-500 transition-colors">
               <FiShoppingCart className="h-6 w-6" />
