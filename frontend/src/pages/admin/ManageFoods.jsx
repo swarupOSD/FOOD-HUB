@@ -19,12 +19,7 @@ const ManageFoods = () => {
     restaurantName: '',
     image: null,
   });
-
   const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    fetchFoods();
-  }, []);
 
   const fetchFoods = async () => {
     try {
@@ -34,6 +29,10 @@ const ManageFoods = () => {
       toast.error('Failed to fetch foods');
     }
   };
+
+  useEffect(() => {
+    fetchFoods();
+  }, []);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -154,7 +153,7 @@ const ManageFoods = () => {
                   </div>
                 </td>
                 <td className="py-4 px-6 text-slate-300">{food.category}</td>
-                <td className="py-4 px-6 font-medium text-slate-200">${food.price.toFixed(2)}</td>
+                <td className="py-4 px-6 font-medium text-slate-200">₹{food.price.toFixed(2)}</td>
                 <td className="py-4 px-6 text-right space-x-2">
                   <button 
                     onClick={() => openEditModal(food)}
@@ -201,7 +200,7 @@ const ManageFoods = () => {
                   <input type="text" name="category" required value={formData.category} onChange={handleInputChange} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-slate-50" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-slate-300">Price ($)</label>
+                  <label className="block text-sm font-medium mb-1 text-slate-300">Price (₹)</label>
                   <input type="number" step="0.01" name="price" required value={formData.price} onChange={handleInputChange} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-slate-50" />
                 </div>
                 <div className="col-span-2">
