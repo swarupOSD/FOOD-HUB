@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import Food from './models/Food.js';
+import Review from './models/Review.js';
+import User from './models/User.js';
 
 dotenv.config();
 
@@ -188,15 +190,75 @@ const realisticFoods = [
   }
 ];
 
+// Seed review comments pool
+const reviewPool = [
+  { name: 'Rahul Sharma', rating: 5, comment: 'Absolutely delicious! The flavors were perfectly balanced and it arrived piping hot. Highly recommend trying this if you haven\'t already.', helpful: 12 },
+  { name: 'Priya Patel', rating: 4, comment: 'Very good portion size and great taste. The packaging was neat. Deducting one star because delivery took a bit longer than expected.', helpful: 5 },
+  { name: 'Amit Kumar', rating: 5, comment: 'Best I\'ve ever had! The quality of ingredients really shines through. Will definitely be ordering this again.', helpful: 8 },
+  { name: 'Sneha Reddy', rating: 4, comment: 'Really enjoyed this! Fresh ingredients and well-prepared. Would love a slightly bigger portion though.', helpful: 3 },
+  { name: 'Vikram Singh', rating: 5, comment: 'Outstanding! Every bite was a delight. This is now my go-to order from this place.', helpful: 15 },
+  { name: 'Ananya Gupta', rating: 3, comment: 'It was decent but I expected more based on the reviews. The taste was okay but not mind-blowing.', helpful: 2 },
+  { name: 'Rohan Mehta', rating: 5, comment: 'Wow, this exceeded my expectations! Perfect seasoning, perfect texture. 10/10 would recommend.', helpful: 10 },
+  { name: 'Kavya Nair', rating: 4, comment: 'Lovely flavors and good presentation. A solid choice for anyone who enjoys this type of food.', helpful: 6 },
+];
+
 const seedData = async () => {
   try {
     await connectDB();
 
-    console.log('Clearing existing foods...');
-    await Food.deleteMany(); // Only clear foods, keep users/orders for now (or clear orders too if you want)
+    console.log('Clearing existing foods and reviews...');
+    await Food.deleteMany();
+    await Review.deleteMany();
 
     console.log('Inserting realistic foods...');
-    await Food.insertMany(realisticFoods);
+    const createdFoods = await Food.insertMany(realisticFoods);
+
+    // Create seed reviewer users (or find existing ones)
+    const seedReviewerIds = [];
+    const reviewerNames = [...new Set(reviewPool.map(r => r.name))];
+
+    for (const name of reviewerNames) {
+      let user = await User.findOne({ name });
+      if (!user) {
+        user = await User.create({
+          name,
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@foodhub.com`,
+          password: 'password123',
+          role: 'user',
+        });
+      }
+      seedReviewerIds.push({ userId: user._id, name: user.name });
+    }
+
+    console.log('Creating seed reviews...');
+    for (const food of createdFoods) {
+      // Pick 2-3 random reviews for each food
+      const numReviews = Math.floor(Math.random() * 2) + 2; // 2 or 3
+      const shuffled = [...reviewPool].sort(() => 0.5 - Math.random());
+      const selectedReviews = shuffled.slice(0, numReviews);
+
+      const reviewDocs = [];
+      for (const reviewData of selectedReviews) {
+        const reviewer = seedReviewerIds.find(r => r.name === reviewData.name);
+        const review = await Review.create({
+          userId: reviewer.userId,
+          foodId: food._id,
+          name: reviewData.name,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+          helpful: reviewData.helpful,
+        });
+        reviewDocs.push(review);
+      }
+
+      // Update food with calculated average rating and review count
+      const avgRating = Number(
+        (reviewDocs.reduce((sum, r) => sum + r.rating, 0) / reviewDocs.length).toFixed(1)
+      );
+      food.rating = avgRating;
+      food.numReviews = reviewDocs.length;
+      await food.save();
+    }
 
     console.log('Data Seeded Successfully!');
     process.exit();
