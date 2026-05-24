@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { FiArrowLeft, FiMinus, FiPlus, FiShoppingBag, FiStar, FiUser, FiThumbsUp } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +14,7 @@ const FoodDetails = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
   
   // Review System State
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -20,27 +22,33 @@ const FoodDetails = () => {
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviews, setReviews] = useState([]);
 
-  // Mock Reviews Data
-  const mockReviews = [
-    { id: 1, name: "Rahul Sharma", rating: 5, date: "2 days ago", comment: "Absolutely delicious! The flavors were perfectly balanced and it arrived piping hot. Highly recommend trying this if you haven't already.", helpful: 12 },
-    { id: 2, name: "Priya Patel", rating: 4, date: "1 week ago", comment: "Very good portion size and great taste. The packaging was neat. Deducting one star because delivery took 5 mins longer than expected.", helpful: 5 },
-    { id: 3, name: "Amit Kumar", rating: 5, date: "2 weeks ago", comment: "Best I've ever had! The quality of ingredients really shines through. Will definitely be ordering this again for my weekend cravings.", helpful: 8 }
-  ];
+  const fetchFood = async () => {
+    try {
+      const { data } = await axios.get(`/api/foods/${id}`);
+      setFood(data);
+    } catch (error) {
+      toast.error('Food not found');
+      navigate('/menu');
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const { data } = await axios.get(`/api/foods/${id}/reviews`);
+      setReviews(data);
+    } catch (error) {
+      console.error('Error fetching reviews', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchFood = async () => {
-      try {
-        const { data } = await axios.get(`/api/foods/${id}`);
-        setFood(data);
-      } catch (error) {
-        toast.error('Food not found');
-        navigate('/menu');
-      } finally {
-        setLoading(false);
-      }
+    const loadData = async () => {
+      await Promise.all([fetchFood(), fetchReviews()]);
+      setLoading(false);
     };
-    fetchFood();
+    loadData();
   }, [id, navigate]);
 
   const handleAddToCart = async () => {
@@ -52,21 +60,59 @@ const FoodDetails = () => {
     }
   };
 
-  const handleReviewSubmit = (e) => {
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (rating === 0) {
       toast.error("Please select a rating!");
       return;
     }
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const config = {
+        headers: { Authorization: `Bearer ${user.token}` },
+      };
+      await axios.post(`/api/foods/${id}/reviews`, { rating, comment: reviewText }, config);
+      toast.success("Review submitted successfully!", { icon: "🌟" });
       setShowReviewForm(false);
       setRating(0);
       setReviewText('');
-      toast.success("Review submitted successfully! Pending approval.", { icon: "🌟" });
-    }, 1500);
+      // Re-fetch data to update rating and reviews
+      await Promise.all([fetchFood(), fetchReviews()]);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleHelpful = async (reviewId) => {
+    if (!user) {
+      toast.error("Please login to vote");
+      return;
+    }
+    try {
+      const config = {
+        headers: { Authorization: `Bearer ${user.token}` },
+      };
+      const { data } = await axios.put(`/api/foods/${id}/reviews/${reviewId}/helpful`, {}, config);
+      // Update the review in state optimistically
+      setReviews(prev => prev.map(r => r._id === reviewId ? { ...r, helpful: data.helpful } : r));
+    } catch (error) {
+      toast.error('Failed to register vote');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   if (loading) {
@@ -122,7 +168,7 @@ const FoodDetails = () => {
             </span>
             <div className="flex items-center space-x-1 text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full text-sm font-medium border border-yellow-500/20">
               <FiStar className="fill-current" />
-              <span>{food.rating || '4.5'}</span>
+              <span>{food.rating || '0'}</span>
             </div>
           </div>
           
@@ -170,21 +216,30 @@ const FoodDetails = () => {
             <h2 className="text-3xl font-bold text-slate-50 mb-2">Customer Reviews</h2>
             <div className="flex items-center gap-3">
               <div className="flex text-yellow-500 text-xl">
-                {[1, 2, 3, 4, 5].map(i => <FiStar key={i} className={i <= Math.round(food.rating || 4.5) ? "fill-current" : "text-slate-600"} />)}
+                {[1, 2, 3, 4, 5].map(i => <FiStar key={i} className={i <= Math.round(food.rating || 0) ? "fill-current" : "text-slate-600"} />)}
               </div>
-              <span className="text-slate-300 font-bold text-lg">{food.rating || '4.5'}</span>
-              <span className="text-slate-500 text-sm">({mockReviews.length} reviews)</span>
+              <span className="text-slate-300 font-bold text-lg">{food.rating || '0'}</span>
+              <span className="text-slate-500 text-sm">({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})</span>
             </div>
           </div>
           
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowReviewForm(!showReviewForm)}
-            className="mt-6 md:mt-0 bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 px-6 py-3 rounded-full font-bold shadow-lg transition-colors flex items-center gap-2"
-          >
-            {showReviewForm ? "Cancel Review" : "Write a Review"}
-          </motion.button>
+          {user ? (
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="mt-6 md:mt-0 bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 px-6 py-3 rounded-full font-bold shadow-lg transition-colors flex items-center gap-2"
+            >
+              {showReviewForm ? "Cancel Review" : "Write a Review"}
+            </motion.button>
+          ) : (
+            <Link 
+              to="/login"
+              className="mt-6 md:mt-0 bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 px-6 py-3 rounded-full font-bold shadow-lg transition-colors flex items-center gap-2"
+            >
+              Login to Write a Review
+            </Link>
+          )}
         </div>
 
         <AnimatePresence>
@@ -257,41 +312,56 @@ const FoodDetails = () => {
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockReviews.map((review, i) => (
-            <motion.div 
-              key={review.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl hover:border-slate-700/80 transition-colors group"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md shadow-orange-500/20">
-                    <FiUser />
+        {reviews.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16"
+          >
+            <div className="text-6xl mb-4">📝</div>
+            <h3 className="text-xl font-bold text-slate-300 mb-2">No reviews yet</h3>
+            <p className="text-slate-500">Be the first to review this food!</p>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviews.map((review, i) => (
+              <motion.div 
+                key={review._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl hover:border-slate-700/80 transition-colors group"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md shadow-orange-500/20">
+                      <FiUser />
+                    </div>
+                    <div>
+                      <h4 className="text-slate-200 font-bold text-sm">{review.name}</h4>
+                      <span className="text-slate-500 text-xs">{formatDate(review.createdAt)}</span>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-slate-200 font-bold text-sm">{review.name}</h4>
-                    <span className="text-slate-500 text-xs">{review.date}</span>
+                  <div className="flex items-center bg-slate-950/50 px-2 py-1 rounded-lg border border-slate-800">
+                    <FiStar className="text-yellow-500 fill-current mr-1 text-xs" />
+                    <span className="text-slate-200 font-bold text-xs">{review.rating}.0</span>
                   </div>
                 </div>
-                <div className="flex items-center bg-slate-950/50 px-2 py-1 rounded-lg border border-slate-800">
-                  <FiStar className="text-yellow-500 fill-current mr-1 text-xs" />
-                  <span className="text-slate-200 font-bold text-xs">{review.rating}.0</span>
+                <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                  "{review.comment}"
+                </p>
+                <div className="flex items-center text-xs text-slate-500 border-t border-slate-800/50 pt-4 mt-auto">
+                  <button 
+                    onClick={() => handleHelpful(review._id)}
+                    className="flex items-center gap-1 hover:text-orange-400 transition-colors"
+                  >
+                    <FiThumbsUp /> Helpful ({review.helpful})
+                  </button>
                 </div>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                "{review.comment}"
-              </p>
-              <div className="flex items-center text-xs text-slate-500 border-t border-slate-800/50 pt-4 mt-auto">
-                <button className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  <FiThumbsUp /> Helpful ({review.helpful})
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
