@@ -56,7 +56,7 @@ const PaymentSuccess = () => {
         <div className="p-8">
           <div className="text-center mb-6 border-b border-slate-800 pb-6">
             <p className="text-slate-400 text-sm mb-1">Amount Paid</p>
-            <h2 className="text-4xl font-bold text-slate-50">${amount > 0 ? amount.toFixed(2) : '0.00'}</h2>
+            <h2 className="text-4xl font-bold text-slate-50">₹{amount > 0 ? amount.toFixed(2) : '0.00'}</h2>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800/50 rounded-full text-xs text-slate-300 mt-3 border border-slate-700/50">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
               Paid via {method}
