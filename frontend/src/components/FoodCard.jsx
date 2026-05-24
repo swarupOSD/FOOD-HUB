@@ -35,7 +35,7 @@ const FoodCard = ({ food }) => {
             e.target.onerror = null; 
             e.target.src = 'https://placehold.co/800x600/1e293b/f97316?text=Image+Not+Found';
           }}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
         
@@ -46,7 +46,7 @@ const FoodCard = ({ food }) => {
         )}
 
         <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-orange-400 border border-white/10 shadow-lg">
-          ${food.price.toFixed(2)}
+          ₹{food.price.toFixed(2)}
         </div>
       </Link>
       
@@ -74,11 +74,11 @@ const FoodCard = ({ food }) => {
           <div className="flex flex-col">
             {hasOffer ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500 line-through">${originalPrice}</span>
-                <span className="text-lg font-bold text-slate-200">${food.price.toFixed(2)}</span>
+                <span className="text-sm text-slate-500 line-through">₹{originalPrice}</span>
+                <span className="text-lg font-bold text-slate-200">₹{food.price.toFixed(2)}</span>
               </div>
             ) : (
-              <span className="text-lg font-bold text-slate-200">${food.price.toFixed(2)}</span>
+              <span className="text-lg font-bold text-slate-200">₹{food.price.toFixed(2)}</span>
             )}
             <span className="text-xs text-slate-500 capitalize">{food.category}</span>
           </div>
